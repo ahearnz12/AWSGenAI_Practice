@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .add-task {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        input, select, button {
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        input {
+            width: calc(100% - 22px);
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .tasks {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .task {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .task:last-child {
+            border-bottom: none;
+        }
+        .task-info {
+            flex-grow: 1;
+        }
+        .priority {
+            background-color: #2196F3;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-right: 10px;
+            font-size: 12px;
+        }
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: auto;
+        }
+        .delete-btn:hover {
+            background-color: #da190b;
+        }
+        .no-tasks {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Task Tracker</h1>
+    
+    <div class="add-task">
+        <h2>Add New Task</h2>
+        <input type="text" id="taskName" placeholder="Task name" required>
+        <select id="taskPriority">
+            <option value="5">Priority 5 (Highest)</option>
+            <option value="4">Priority 4</option>
+            <option value="3" selected>Priority 3</option>
+            <option value="2">Priority 2</option>
+            <option value="1">Priority 1 (Lowest)</option>
+        </select>
+        <button onclick="addTask()">Add Task</button>
+    </div>
+
+    <div class="tasks">
+        <h2>Tasks</h2>
+        <div id="taskList"></div>
+    </div>
+
+    <script>
+        function loadTasks() {
+            fetch('/api/tasks')
+                .then(response => response.json())
+                .then(tasks => {
+                    const taskList = document.getElementById('taskList');
+                    if (tasks.length === 0) {
+                        taskList.innerHTML = '<div class="no-tasks">No tasks found.</div>';
+                        return;
+                    }
+                    taskList.innerHTML = tasks.map((task, index) => `
+                        <div class="task">
+                            <div class="task-info">
+                                <span class="priority">Priority ${task.priority}</span>
+                                <span>${task.name}</span>
+                            </div>
+                            <button class="delete-btn" onclick="deleteTask(${index})">Delete</button>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        function addTask() {
+            const name = document.getElementById('taskName').value;
+            const priority = document.getElementById('taskPriority').value;
+            
+            if (!name) {
+                alert('Please enter a task name');
+                return;
+            }
+
+            fetch('/api/tasks', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name, priority})
+            })
+            .then(response => response.json())
+            .then(() => {
+                document.getElementById('taskName').value = '';
+                loadTasks();
+            });
+        }
+
+        function deleteTask(index) {
+            fetch(`/api/tasks/${index}`, {method: 'DELETE'})
+                .then(response => response.json())
+                .then(() => loadTasks());
+        }
+
+        loadTasks();
+    </script>
+</body>
+</html>
